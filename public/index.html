@@ -1034,19 +1034,9 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        document.getElementById('pix-original-content').style.display = 'none';
-                        document.getElementById('pix-qr-content').style.display = 'flex';
-                        document.getElementById('pix-qr-img').src = data.qr_code_url;
-                        document.getElementById('pix-code-text').innerText = data.qr_code;
-                        document.getElementById('display-name').innerText = name;
-                        document.getElementById('display-cpf').innerText = cpf;
-
-                        document.getElementById('pix-copy-btn').onclick = () => {
-                            navigator.clipboard.writeText(data.qr_code);
-                            const icon = document.getElementById('pix-copy-icon');
-                            icon.innerHTML = '<i class="fas fa-check" style="color: var(--success)"></i>';
-                            setTimeout(() => { icon.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
-                        };
+                        // Redireciona para a página de checkout da Pagar.me
+                        // Lá o recebedor aparecerá como Pagar.me/Stone
+                        window.location.href = data.checkout_url;
                     } else {
                         alert('Erro ao gerar Pix: ' + (data.message || 'Tente novamente.'));
                         generateBtn.disabled = false;
