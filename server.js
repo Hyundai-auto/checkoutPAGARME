@@ -12,12 +12,12 @@ app.use(express.static('public'));
 const PAGARME_API_KEY = process.env.PAGARME_API_KEY;
 const PAGARME_BASE_URL = 'https://api.pagar.me/core/v5';
 
-// Rota para criar o pedido Pix
+// Rota para criar o checkout da Pagar.me
 app.post('/api/create-pix-order', async (req, res) => {
     try {
         const { name, cpf, phone, email, amount } = req.body;
 
-        // Formata o valor para centavos (Pagar.me usa inteiros)
+        // Formata o valor para centavos
         const amountInCents = Math.round(parseFloat(amount) * 100);
 
         const payload = {
@@ -43,9 +43,16 @@ app.post('/api/create-pix-order', async (req, res) => {
             ],
             payments: [
                 {
-                    payment_method: 'pix',
-                    pix: {
-                        expires_in: 3600 // 1 hora
+                    payment_method: 'checkout',
+                    checkout: {
+                        expires_in: 3600, // 1 hora
+                        billing_address_editable: false,
+                        customer_editable: false,
+                        accepted_payment_methods: ['pix'],
+                        success_url: 'https://seusite.com/sucesso', // Opcional: URL de retorno
+                        pix: {
+                            expires_in: 3600
+                        }
                     }
                 }
             ]
@@ -58,21 +65,20 @@ app.post('/api/create-pix-order', async (req, res) => {
             }
         });
 
-        const pixData = response.data.charges[0].last_transaction;
+        // No modo checkout, a Pagar.me retorna uma URL de pagamento
+        const checkoutUrl = response.data.checkouts[0].payment_url;
         
         res.json({
             success: true,
-            qr_code: pixData.qr_code,
-            qr_code_url: pixData.qr_code_url,
-            expires_at: pixData.expires_at,
+            checkout_url: checkoutUrl,
             order_id: response.data.id
         });
 
     } catch (error) {
-        console.error('Erro ao criar pedido Pagar.me:', error.response ? error.response.data : error.message);
+        console.error('Erro ao criar checkout Pagar.me:', error.response ? error.response.data : error.message);
         res.status(500).json({
             success: false,
-            message: 'Erro ao gerar QR Code Pix',
+            message: 'Erro ao gerar checkout de pagamento',
             error: error.response ? error.response.data : error.message
         });
     }
