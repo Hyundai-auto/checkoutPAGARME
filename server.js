@@ -12,12 +12,9 @@ app.use(express.static('public'));
 const PAGARME_API_KEY = process.env.PAGARME_API_KEY;
 const PAGARME_BASE_URL = 'https://api.pagar.me/core/v5';
 
-// Rota para criar o checkout da Pagar.me
 app.post('/api/create-pix-order', async (req, res) => {
     try {
         const { name, cpf, phone, email, amount } = req.body;
-
-        // Formata o valor para centavos
         const amountInCents = Math.round(parseFloat(amount) * 100);
 
         const payload = {
@@ -45,11 +42,10 @@ app.post('/api/create-pix-order', async (req, res) => {
                 {
                     payment_method: 'checkout',
                     checkout: {
-                        expires_in: 3600, // 1 hora
+                        expires_in: 3600,
                         billing_address_editable: false,
                         customer_editable: false,
                         accepted_payment_methods: ['pix'],
-                        success_url: 'https://seusite.com/sucesso', // Opcional: URL de retorno
                         pix: {
                             expires_in: 3600
                         }
@@ -65,7 +61,6 @@ app.post('/api/create-pix-order', async (req, res) => {
             }
         });
 
-        // No modo checkout, a Pagar.me retorna uma URL de pagamento
         const checkoutUrl = response.data.checkouts[0].payment_url;
         
         res.json({
