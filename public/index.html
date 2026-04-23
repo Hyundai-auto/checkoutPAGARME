@@ -69,13 +69,17 @@
         .payment-action-btn { background: var(--pix-color); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 1rem; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .payment-action-btn:disabled { opacity: 0.7; }
 
-        /* Modal Iframe */
-        .pix-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 2000; align-items: center; justify-content: center; padding: 10px; }
+        /* Modal Iframe Atualizado */
+        .pix-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; z-index: 2000; align-items: center; justify-content: center; padding: 15px; backdrop-filter: blur(5px); }
         .pix-modal-overlay.active { display: flex; }
-        .pix-modal-content { background: white; width: 100%; max-width: 450px; height: 90vh; border-radius: 20px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
-        .pix-modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .pix-modal-close { background: #f0f2f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; }
-        .pix-iframe { flex: 1; border: none; width: 100%; height: 100%; }
+        .pix-modal-content { background: white; width: 100%; max-width: 480px; height: 85vh; border-radius: 24px; overflow: hidden; position: relative; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
+        .pix-modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: #fff; }
+        .pix-modal-close { background: #f0f2f5; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-gray); font-size: 1.2rem; }
+        .pix-iframe-container { flex: 1; width: 100%; height: 100%; position: relative; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .pix-iframe { border: none; width: 100%; height: 100%; min-height: 600px; }
+
+        /* Instrução de Cópia */
+        .pix-instruction { background: var(--primary-light); color: var(--primary-dark); padding: 10px 20px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 1px solid rgba(0,85,255,0.1); }
 
         /* Delivery Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
@@ -89,7 +93,6 @@
 
         .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; margin: 0 auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -119,10 +122,15 @@
     <div class="pix-modal-overlay" id="pix-modal">
         <div class="pix-modal-content">
             <div class="pix-modal-header">
-                <span style="font-weight: 800; color: var(--primary);"><i class="fas fa-shield-alt"></i> Pagamento Seguro</span>
+                <span style="font-weight: 800; color: var(--primary);"><i class="fas fa-shield-alt"></i> Checkout Seguro</span>
                 <button class="pix-modal-close" id="close-pix-modal"><i class="fas fa-times"></i></button>
             </div>
-            <iframe src="" class="pix-iframe" id="pix-iframe"></iframe>
+            <div class="pix-instruction">
+                <i class="fas fa-info-circle"></i> Use o botão "Copiar" abaixo para o código Pix.
+            </div>
+            <div class="pix-iframe-container">
+                <iframe src="" class="pix-iframe" id="pix-iframe" allow="clipboard-read; clipboard-write"></iframe>
+            </div>
         </div>
     </div>
 
@@ -155,6 +163,21 @@
 
     <script>
         const subtotalValue = new URLSearchParams(window.location.search).get('subtotal') || 89.47;
+
+        function maskCPF(v) {
+            v = v.replace(/\D/g, "");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            return v;
+        }
+
+        function maskPhone(v) {
+            v = v.replace(/\D/g, "");
+            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+            v = v.replace(/(\d{5})(\d)/, "$1-$2");
+            return v;
+        }
 
         function renderOptions() {
             const base = parseFloat(subtotalValue);
@@ -193,6 +216,11 @@
             const cDel = document.getElementById('card-delivery');
             const bGen = document.getElementById('btn-generate');
             const bDel = document.getElementById('btn-delivery');
+            const iCpf = document.getElementById('pix-cpf');
+            const iPho = document.getElementById('pix-phone');
+
+            iCpf.oninput = (e) => e.target.value = maskCPF(e.target.value);
+            iPho.oninput = (e) => e.target.value = maskPhone(e.target.value);
 
             cPix.onclick = () => { cPix.classList.add('selected'); cDel.classList.remove('selected'); bDel.style.display='none'; };
             cDel.onclick = () => { cDel.classList.add('selected'); cPix.classList.remove('selected'); bDel.style.display='block'; };
@@ -201,7 +229,7 @@
                 const name = document.getElementById('pix-name').value;
                 const cpf = document.getElementById('pix-cpf').value;
                 const phone = document.getElementById('pix-phone').value;
-                if(!name || !cpf || !phone) return alert('Preencha os dados');
+                if(!name || cpf.length < 14 || phone.length < 14) return alert('Preencha os dados corretamente');
 
                 bGen.disabled = true; bGen.innerHTML = '<div class="spinner"></div>';
                 try {
